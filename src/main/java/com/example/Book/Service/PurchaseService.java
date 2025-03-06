@@ -1,0 +1,83 @@
+package com.example.Book.Service;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import com.example.Book.Entity.Book;
+import com.example.Book.Entity.Purchase;
+import com.example.Book.Entity.User;
+import com.example.Book.Repo.PurchaseRepository;
+import jakarta.transaction.Transactional;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+@Service
+public class PurchaseService {
+
+    @Autowired
+    private PurchaseRepository purchaseRepository;
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private BookService bookService;
+
+    @Transactional
+    public Purchase purchaseBook(int userId, int bookId) {
+        Optional<User> userOpt = userService.findById(userId);
+        Optional<Book> bookOpt = bookService.findById(bookId);
+
+        if (userOpt.isPresent() && bookOpt.isPresent()) {
+            User user = userOpt.get();
+            Book book = bookOpt.get();
+
+            boolean alreadyPurchased = purchaseRepository.existsByUserAndBook(user, book);
+            if (alreadyPurchased) {
+                throw new RuntimeException("You have already purchased this book!");
+            }
+
+            if (book.getCopiesAvailable() <= 0) {
+                throw new RuntimeException("Book is out of stock!");
+            }
+
+            book.setCopiesAvailable(book.getCopiesAvailable() - 1);
+            bookService.updateBook(bookId, book);
+
+            Purchase purchase = new Purchase(user, book, LocalDateTime.now());
+            return purchaseRepository.save(purchase);
+        }
+        throw new RuntimeException("User or Book not found");
+    }
+
+    public List<Purchase> getPurchaseHistory(int userId) {
+        Optional<User> userOpt = userService.findById(userId);
+        if (userOpt.isPresent()) {
+            return purchaseRepository.findByUser(userOpt.get());
+        }
+        throw new RuntimeException("User not found");
+    }
+
+    public List<Map<String, Object>> getAllUserHistory() {
+        List<Purchase> purchases = purchaseRepository.findAll();
+        List<Map<String, Object>> historyList = new ArrayList<>();
+
+        for (Purchase purchase : purchases) {
+            Map<String, Object> history = new HashMap<>();
+            history.put("userId", purchase.getUser().getId());
+            history.put("userName", purchase.getUser().getName());
+            history.put("userEmail", purchase.getUser().getEmail());
+            history.put("bookTitle", purchase.getBook().getTitle());
+            history.put("bookAuthor", purchase.getBook().getAuthor());
+            history.put("purchaseDate", purchase.getPurchaseDate());
+
+            historyList.add(history);
+        }
+
+        return historyList;
+    }
+
+}
