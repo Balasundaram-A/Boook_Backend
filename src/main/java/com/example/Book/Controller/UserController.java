@@ -9,7 +9,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import com.example.Book.Entity.Book;
 import com.example.Book.Entity.User;
+import com.example.Book.Service.PurchaseService;
 import com.example.Book.Service.UserService;
 
 
@@ -92,5 +95,12 @@ public ResponseEntity<Map<String, String>> getUserRoleById(@PathVariable int id)
     return ResponseEntity.ok(Collections.singletonMap("role", role)); // Returns { "role": "USER" }
 }
 
-    
+    @Autowired
+    private PurchaseService purchaseService;
+
+    @GetMapping("/{userId}/purchased-books")
+    public ResponseEntity<List<Book>> getPurchasedBooks(@PathVariable int userId) {
+        List<Book> purchasedBooks = purchaseService.getPurchasedBooksByUserId(userId);
+        return ResponseEntity.ok(purchasedBooks);
+    }
 }

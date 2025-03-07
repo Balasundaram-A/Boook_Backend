@@ -1,6 +1,9 @@
 package com.example.Book.Service;
 
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.stereotype.Service;
 import com.example.Book.Entity.Book;
 import com.example.Book.Entity.Purchase;
@@ -8,12 +11,14 @@ import com.example.Book.Entity.User;
 import com.example.Book.Repo.PurchaseRepository;
 import jakarta.transaction.Transactional;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Pageable;
 @Service
 public class PurchaseService {
 
@@ -61,23 +66,31 @@ public class PurchaseService {
         throw new RuntimeException("User not found");
     }
 
-    public List<Map<String, Object>> getAllUserHistory() {
-        List<Purchase> purchases = purchaseRepository.findAll();
-        List<Map<String, Object>> historyList = new ArrayList<>();
+    public Page<Map<String, Object>> getAllUserHistory(Pageable pageable) {
+    Page<Purchase> purchasePage = purchaseRepository.findAll(pageable);
 
-        for (Purchase purchase : purchases) {
-            Map<String, Object> history = new HashMap<>();
-            history.put("userId", purchase.getUser().getId());
-            history.put("userName", purchase.getUser().getName());
-            history.put("userEmail", purchase.getUser().getEmail());
-            history.put("bookTitle", purchase.getBook().getTitle());
-            history.put("bookAuthor", purchase.getBook().getAuthor());
-            history.put("purchaseDate", purchase.getPurchaseDate());
-
-            historyList.add(history);
+    List<Map<String, Object>> historyList = purchasePage.stream().map(purchase -> {
+        if (purchase.getUser() == null || purchase.getBook() == null) {
+            return null; // Skip invalid purchases
         }
 
-        return historyList;
-    }
+        Map<String, Object> history = new HashMap<>();
+        history.put("userId", purchase.getUser().getId());
+        history.put("userName", purchase.getUser().getName());
+        history.put("userEmail", purchase.getUser().getEmail());
+        history.put("bookTitle", purchase.getBook().getTitle());
+        history.put("bookAuthor", purchase.getBook().getAuthor());
+        history.put("purchaseDate", purchase.getPurchaseDate());
+        return history;
+    }).filter(Objects::nonNull).collect(Collectors.toList());
 
+    return new PageImpl<>(historyList, pageable, purchasePage.getTotalElements());
+}
+
+    
+
+    public List<Book> getPurchasedBooksByUserId(int userId) {
+        return purchaseRepository.findBooksByUserId(userId);
+    }
+    
 }

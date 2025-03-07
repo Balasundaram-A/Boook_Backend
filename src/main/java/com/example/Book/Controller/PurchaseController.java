@@ -1,6 +1,8 @@
 package com.example.Book.Controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,10 +31,11 @@ public class PurchaseController {
     public List<Purchase> getPurchaseHistory(@PathVariable int userId) {
         return purchaseService.getPurchaseHistory(userId);
     }
-    @GetMapping("/history/all")
-    public ResponseEntity<List<Map<String, Object>>> getAllUserHistory() {
-        List<Map<String, Object>> history = purchaseService.getAllUserHistory();
+
+    @GetMapping("/purchase-history")
+    public ResponseEntity<Page<Map<String, Object>>> getAllUserHistory(Pageable pageable) {
+        Page<Map<String, Object>> history = purchaseService.getAllUserHistory(pageable);
         return ResponseEntity.ok(history);
     }
-}
 
+}
