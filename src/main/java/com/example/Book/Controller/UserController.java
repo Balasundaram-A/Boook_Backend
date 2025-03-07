@@ -10,11 +10,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.example.Book.Entity.Book;
 import com.example.Book.Entity.User;
 import com.example.Book.Service.PurchaseService;
 import com.example.Book.Service.UserService;
-
 
 @RestController
 @CrossOrigin(origins = "http://localhost:5173")
@@ -68,39 +66,42 @@ public class UserController {
     }
 
     @PostMapping("/login")
-public ResponseEntity<?> loginUser(@RequestBody User user) {
-    System.out.println("Attempting login for Name: " + user.getName());
+    public ResponseEntity<?> loginUser(@RequestBody User user) {
+        System.out.println("Attempting login for Name: " + user.getName());
 
-    boolean isAuthenticated = userService.authenticateUser(user.getName(), user.getPassword());
-    
-    if (isAuthenticated) {
-        // ✅ Fetch user details from database after successful authentication
-        User authenticatedUser = userService.getuserbyname(user.getName());
-        
-        if (authenticatedUser != null) {
-            Map<String, Object> response = new HashMap<>();
-            response.put("id", authenticatedUser.getId()); // ✅ Return the correct user ID
-            response.put("name", authenticatedUser.getName());
-            response.put("message", "Login successful");
+        boolean isAuthenticated = userService.authenticateUser(user.getName(), user.getPassword());
 
-            return ResponseEntity.ok(response);
+        if (isAuthenticated) {
+            // ✅ Fetch user details from database after successful authentication
+            User authenticatedUser = userService.getuserbyname(user.getName());
+
+            if (authenticatedUser != null) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("id", authenticatedUser.getId()); // ✅ Return the correct user ID
+                response.put("name", authenticatedUser.getName());
+                response.put("message", "Login successful");
+
+                return ResponseEntity.ok(response);
+            }
         }
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Collections.singletonMap("message", "Invalid credentials"));
     }
 
-    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Collections.singletonMap("message", "Invalid credentials"));
-}
-@GetMapping("/role/{id}")
-public ResponseEntity<Map<String, String>> getUserRoleById(@PathVariable int id) {
-    String role = userService.getRoleById(id);
-    return ResponseEntity.ok(Collections.singletonMap("role", role)); // Returns { "role": "USER" }
-}
+    @GetMapping("/role/{id}")
+    public ResponseEntity<Map<String, String>> getUserRoleById(@PathVariable int id) {
+        String role = userService.getRoleById(id);
+        return ResponseEntity.ok(Collections.singletonMap("role", role)); // Returns { "role": "USER" }
+    }
 
     @Autowired
     private PurchaseService purchaseService;
 
-    @GetMapping("/{userId}/purchased-books")
-    public ResponseEntity<List<Book>> getPurchasedBooks(@PathVariable int userId) {
-        List<Book> purchasedBooks = purchaseService.getPurchasedBooksByUserId(userId);
-        return ResponseEntity.ok(purchasedBooks);
+    @GetMapping("/users/{userId}/books/{bookId}/purchased")
+    public ResponseEntity<Boolean> checkUserPurchase(@PathVariable int userId, @PathVariable int bookId) {
+        boolean hasPurchased = purchaseService.hasUserPurchasedBook(userId, bookId);
+        return ResponseEntity.ok(hasPurchased);
     }
+
 }

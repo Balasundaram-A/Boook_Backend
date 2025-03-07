@@ -11,14 +11,16 @@ import com.example.Book.Entity.User;
 import com.example.Book.Repo.PurchaseRepository;
 import jakarta.transaction.Transactional;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
 import org.springframework.data.domain.Pageable;
+
+
 @Service
 public class PurchaseService {
 
@@ -45,11 +47,6 @@ public class PurchaseService {
                 throw new RuntimeException("You have already purchased this book!");
             }
 
-            if (book.getCopiesAvailable() <= 0) {
-                throw new RuntimeException("Book is out of stock!");
-            }
-
-            book.setCopiesAvailable(book.getCopiesAvailable() - 1);
             bookService.updateBook(bookId, book);
 
             Purchase purchase = new Purchase(user, book, LocalDateTime.now());
@@ -59,19 +56,18 @@ public class PurchaseService {
     }
 
     public List<Purchase> getPurchaseHistory(int userId) {
-        Optional<User> userOpt = userService.findById(userId);
-        if (userOpt.isPresent()) {
-            return purchaseRepository.findByUser(userOpt.get());
-        }
-        throw new RuntimeException("User not found");
+        return userService.findById(userId)
+            .map(purchaseRepository::findByUser)
+            .orElse(Collections.emptyList()); // Return empty list if user not found
     }
+    
 
     public Page<Map<String, Object>> getAllUserHistory(Pageable pageable) {
     Page<Purchase> purchasePage = purchaseRepository.findAll(pageable);
 
     List<Map<String, Object>> historyList = purchasePage.stream().map(purchase -> {
         if (purchase.getUser() == null || purchase.getBook() == null) {
-            return null; // Skip invalid purchases
+            return null;    
         }
 
         Map<String, Object> history = new HashMap<>();
@@ -87,10 +83,9 @@ public class PurchaseService {
     return new PageImpl<>(historyList, pageable, purchasePage.getTotalElements());
 }
 
-    
+public boolean hasUserPurchasedBook(int userId, int bookId) {
+    return purchaseRepository.existsByUserIdAndBookId(userId, bookId);
+}
 
-    public List<Book> getPurchasedBooksByUserId(int userId) {
-        return purchaseRepository.findBooksByUserId(userId);
-    }
     
 }

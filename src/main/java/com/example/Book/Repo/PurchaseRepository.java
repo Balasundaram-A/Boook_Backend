@@ -27,5 +27,7 @@ public interface PurchaseRepository extends JpaRepository<Purchase, Long> {
 
     @SuppressWarnings("null")
     Page<Purchase> findAll(Pageable pageable);
+
+    boolean existsByUserIdAndBookId(int userId, int bookId);
 }
 

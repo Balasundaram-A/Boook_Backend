@@ -1,9 +1,12 @@
 package com.example.Book.Service;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
 import com.example.Book.Entity.Book;
 import com.example.Book.Repo.BookRepository;
 
@@ -20,8 +23,13 @@ public class BookService {
         return bookRepository.findByTitleContainingIgnoreCase(title);
     }
 
-    public void addBook(Book book) {
-        bookRepository.save(book);
+    public Book addBook(Book book, MultipartFile doc) throws IOException {
+
+        book.setDocname(doc.getOriginalFilename());
+        book.setDoctype(doc.getContentType());
+        book.setDocdata(doc.getBytes());
+        return bookRepository.save(book);
+        
     }
 
     public List<Book> getAllBooks() {
@@ -32,7 +40,6 @@ public class BookService {
         Book book = bookRepository.findById(id).orElseThrow(() -> new RuntimeException("Book not found!"));
         book.setTitle(updatedBook.getTitle());
         book.setAuthor(updatedBook.getAuthor());
-        book.setCopiesAvailable(updatedBook.getCopiesAvailable());
         bookRepository.save(book);
     }
 
