@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import com.example.Book.Entity.Purchase;
 import com.example.Book.Service.PurchaseService;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -27,15 +28,18 @@ public class PurchaseController {
     }
 
     // Get logged-in user's purchase history
-    @GetMapping("/history/{userId}")
-    public List<Purchase> getPurchaseHistory(@PathVariable int userId) {
-        return purchaseService.getPurchaseHistory(userId);
-    }
-
     @GetMapping("/purchase-history")
     public ResponseEntity<Page<Map<String, Object>>> getAllUserHistory(Pageable pageable) {
         Page<Map<String, Object>> history = purchaseService.getAllUserHistory(pageable);
         return ResponseEntity.ok(history);
     }
 
+     @GetMapping("/search")
+    public List<Purchase> getPurchasesByDateRange(
+            @RequestParam String from,
+            @RequestParam String to) {
+        LocalDateTime fromDate = LocalDateTime.parse(from);
+        LocalDateTime toDate = LocalDateTime.parse(to);
+        return purchaseService.getPurchasesBetweenDates(fromDate, toDate);
+    }
 }

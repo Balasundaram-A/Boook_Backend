@@ -11,7 +11,6 @@ import com.example.Book.Entity.User;
 import com.example.Book.Repo.PurchaseRepository;
 import jakarta.transaction.Transactional;
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,11 +54,6 @@ public class PurchaseService {
         throw new RuntimeException("User or Book not found");
     }
 
-    public List<Purchase> getPurchaseHistory(int userId) {
-        return userService.findById(userId)
-            .map(purchaseRepository::findByUser)
-            .orElse(Collections.emptyList()); // Return empty list if user not found
-    }
     
 
     public Page<Map<String, Object>> getAllUserHistory(Pageable pageable) {
@@ -87,5 +81,8 @@ public boolean hasUserPurchasedBook(int userId, int bookId) {
     return purchaseRepository.existsByUserIdAndBookId(userId, bookId);
 }
 
+public List<Purchase> getPurchasesBetweenDates(LocalDateTime from, LocalDateTime to) {
+    return purchaseRepository.findByPurchaseDateBetween(from, to);
+}
     
 }
